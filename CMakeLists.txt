@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.26.4)
 project(test_raylib_box2d)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -6,72 +6,46 @@ set(CMAKE_CXX_STANDARD 23)
 # Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+include(FetchContent)
+
+function(add_git_dependency libName gitURL gitTag)
+    FetchContent_Declare(${libName}
+        GIT_REPOSITORY ${gitURL}
+        GIT_TAG        ${gitTag}
+        GIT_SHALLOW    TRUE
+        GIT_PROGRESS   TRUE
+    )
+    FetchContent_MakeAvailable(${libName})
+    target_compile_options(${libName} PRIVATE "-w")
+endfunction()
+
+
 # Dependencies
-set(RAYLIB_VERSION 5.0)
-find_package(raylib ${RAYLIB_VERSION} QUIET) # QUIET or REQUIRED
-if (NOT raylib_FOUND) # If there's none, fetch and build raylib
-    include(FetchContent)
-    FetchContent_Declare(
-            raylib
-            DOWNLOAD_EXTRACT_TIMESTAMP OFF
-            URL https://github.com/baz606/raylib/archive/refs/tags/${RAYLIB_VERSION}.tar.gz
-    )
-    FetchContent_GetProperties(raylib)
-    if (NOT raylib_POPULATED) # Have we downloaded raylib yet?
-        set(FETCHCONTENT_QUIET NO)
-        FetchContent_Populate(raylib)
-        set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
-        add_subdirectory(${raylib_SOURCE_DIR} ${raylib_BINARY_DIR})
-    endif()
-endif()
 
-# Get raygui
-set(RAYLIB_GUI_VERSION 4.0)
-find_package(raygui ${RAYLIB_GUI_VERSION} QUIET) # QUIET or REQUIRED
-if (NOT raygui_FOUND) # If there's none, fetch raygui
-    include(FetchContent)
-    FetchContent_Declare(
-            raygui
-            DOWNLOAD_EXTRACT_TIMESTAMP OFF
-            URL https://github.com/baz606/raygui/archive/refs/tags/${RAYLIB_GUI_VERSION}.tar.gz
-    )
-    FetchContent_GetProperties(raygui)
-    if (NOT raygui_POPULATED) # Have we downloaded raygui yet?
-        set(FETCHCONTENT_QUIET NO)
-        FetchContent_Populate(raygui)
-        set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
-        # Copy over raygui.h over to raylib_SOURCE_DIR
-        configure_file(
-                ${raygui_SOURCE_DIR}/src/raygui.h ${raylib_SOURCE_DIR}/src
-        )
-    endif()
-endif()
-
-# Get box2d
-set(BOX2D_VERSION 2.4.1)
-find_package(box2d ${BOX2D_VERSION} QUIET) # QUIET or REQUIRED
-if (NOT box2d_FOUND) # If there's none, fetch raygui
-    include(FetchContent)
-    FetchContent_Declare(
-            box2d
-            DOWNLOAD_EXTRACT_TIMESTAMP OFF
-            URL https://github.com/baz606/box2d/archive/refs/tags/v${BOX2D_VERSION}.tar.gz
-    )
-    FetchContent_GetProperties(box2d)
-    if (NOT box2d_POPULATED) # Have we downloaded raygui yet?
-        set(FETCHCONTENT_QUIET NO)
-        FetchContent_Populate(box2d)
-    endif()
-endif()
-
-set(BOX2D_BUILD_TESTBED OFF)
-set(BOX2D_BUILD_UNIT_TESTS OFF)
-add_subdirectory(${box2d_SOURCE_DIR} ${box2d_BINARY_DIR})
-
-add_executable(${PROJECT_NAME} main.cpp
+# Add Raylib
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
+set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
+add_git_dependency(
+    raylib
+    https://github.com/baz606/raylib.git
+    5.0
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE raylib box2d)
+# Get box2d
+set(BOX2D_BUILD_TESTBED OFF CACHE BOOL "" FORCE)
+add_git_dependency(
+    box2d
+    https://github.com/baz606/box2d.git
+    v2.4.1
+)
+
+add_executable(${PROJECT_NAME} main.cpp)
+
+target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
+target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
 
 # Web Configurations
 if (${PLATFORM} STREQUAL "Web")

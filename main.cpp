@@ -26,8 +26,8 @@ int main()
   rGroundBody.y = groundBodyDef.position.y * PPM;
   b2Body* groundBody = world.CreateBody(&groundBodyDef);
 
-  float groundBoxWidth = 500.f;
-  float groundBoxHeight = 100.f;
+  float groundBoxWidth = 500.f; // pixels
+  float groundBoxHeight = 100.f; // pixels
   b2PolygonShape groundBox;
   groundBox.SetAsBox((groundBoxWidth / 2.f) / PPM, (groundBoxHeight / 2.f) / PPM);
   rGroundBody.width = groundBoxWidth;
@@ -39,13 +39,13 @@ int main()
   b2BodyDef bodyDef;
   bodyDef.type = b2_dynamicBody;
   float dropHeight = screenHeight / 4.f;
-  bodyDef.position.Set((screenWidth / 2.f) / PPM, ((screenHeight / 2.f) - dropHeight) / PPM);
+  bodyDef.position.Set(((screenWidth / 2.f)) / PPM, ((screenHeight / 2.f) - dropHeight) / PPM);
   rDynamicBody.x = bodyDef.position.x * PPM;
   rDynamicBody.y = bodyDef.position.y * PPM;
   b2Body* body = world.CreateBody(&bodyDef);
 
-  float dynamicBodyWidth = 50.0f;
-  float dynamicBodyHeight = 50.0f;
+  float dynamicBodyWidth = 50.0f; // pixels
+  float dynamicBodyHeight = 50.0f; // pixels
   b2PolygonShape dynamicBox;
   dynamicBox.SetAsBox((dynamicBodyWidth / 2.0f) / PPM, (dynamicBodyHeight / 2.0f) / PPM);
   rDynamicBody.width = dynamicBodyWidth;
@@ -55,6 +55,7 @@ int main()
   fixtureDef.density = 1.0f;
   fixtureDef.friction = 0.3f;
   b2Fixture* fixture = body->CreateFixture(&fixtureDef);
+  body->SetAngularVelocity(5.f);
 
   float timeStep = 1.0f / 60.0f;
   int32 velocityIterations = 6;
@@ -75,12 +76,14 @@ int main()
       world.DestroyBody(body);
 
       body = world.CreateBody(&bodyDef);
+      body->SetAngularVelocity(5.f);
       fixture = body->CreateFixture(&fixtureDef);
     }
 
     // Physics update
     world.Step(timeStep, velocityIterations, positionIterations);
     b2Vec2 position = body->GetPosition();
+    float rotation = (body->GetAngle() * (180 / PI));
     rDynamicBody.x = position.x * PPM;
     rDynamicBody.y = position.y * PPM;
 
@@ -88,7 +91,7 @@ int main()
     origin = { rGroundBody.width / 2.f, rGroundBody.height / 2.f };
     DrawRectanglePro(rGroundBody, origin, 0.f, BLUE);
     origin = { rDynamicBody.width / 2.f, rDynamicBody.height / 2.f };
-    DrawRectanglePro(rDynamicBody, origin, 0.f, BLACK);
+    DrawRectanglePro(rDynamicBody, origin, rotation, BLACK);
 
     EndDrawing();
   }
